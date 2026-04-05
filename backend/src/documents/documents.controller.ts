@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, UseGuards, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, Delete, UseInterceptors, UploadedFile, UseGuards, Body, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -32,5 +32,15 @@ export class DocumentsController {
   @Get(':id/url')
   getDocumentUrl(@CurrentOrg() orgId: string, @Param('id') id: string) {
     return this.documentsService.getDocumentUrl(orgId, id);
+  }
+
+  @Delete(':id')
+  remove(@CurrentOrg() orgId: string, @Param('id') id: string) {
+    return this.documentsService.remove(orgId, id);
+  }
+
+  @Post(':id/ai-rename')
+  aiRename(@CurrentOrg() orgId: string, @Param('id') id: string) {
+    return this.documentsService.aiRename(orgId, id);
   }
 }

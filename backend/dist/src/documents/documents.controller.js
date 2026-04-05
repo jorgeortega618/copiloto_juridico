@@ -35,6 +35,12 @@ let DocumentsController = class DocumentsController {
     getDocumentUrl(orgId, id) {
         return this.documentsService.getDocumentUrl(orgId, id);
     }
+    remove(orgId, id) {
+        return this.documentsService.remove(orgId, id);
+    }
+    aiRename(orgId, id) {
+        return this.documentsService.aiRename(orgId, id);
+    }
 };
 exports.DocumentsController = DocumentsController;
 __decorate([
@@ -65,6 +71,22 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], DocumentsController.prototype, "getDocumentUrl", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, auth_decorators_1.CurrentOrg)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], DocumentsController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/ai-rename'),
+    __param(0, (0, auth_decorators_1.CurrentOrg)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], DocumentsController.prototype, "aiRename", null);
 exports.DocumentsController = DocumentsController = __decorate([
     (0, common_1.Controller)('documents'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

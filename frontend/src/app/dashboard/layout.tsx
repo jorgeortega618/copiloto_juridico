@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Users className="w-5 h-5" /> Clientes
           </Link>
           <Link href="/dashboard/agenda" className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all border-l-4 border-transparent">
-            <Calendar className="w-5 h-5" /> Calendar
+            <Calendar className="w-5 h-5" /> Agenda
           </Link>
 
           <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 mt-8">Configuración</p>

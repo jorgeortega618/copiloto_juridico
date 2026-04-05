@@ -94,6 +94,9 @@ let StorageService = class StorageService {
             stream.on('error', reject);
         });
     }
+    async deleteFile(objectName) {
+        await this.minioClient.removeObject(this.bucketName, objectName);
+    }
 };
 exports.StorageService = StorageService;
 exports.StorageService = StorageService = __decorate([

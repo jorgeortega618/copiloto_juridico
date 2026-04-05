@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
-import { Bot, FileText, Send, Calendar, FolderClock, UploadCloud, ChevronLeft, CheckCircle2, User, Loader2, Clock, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, use, useCallback } from 'react';
+import { Bot, FileText, Send, Calendar, FolderClock, UploadCloud, ChevronLeft, CheckCircle2, User, Loader2, Clock, AlertCircle, Wifi, WifiOff, Trash2, Download, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import api from '../../../../lib/api';
+import { io, Socket } from 'socket.io-client';
 
 interface Message {
   role: 'system' | 'user';
@@ -29,7 +30,10 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [renamingDocId, setRenamingDocId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const loadDocuments = async () => {
     try {
@@ -44,6 +48,75 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     loadDocuments();
+  }, [expedienteId]);
+
+  // Smart polling: auto-refresh while documents are being processed
+  useEffect(() => {
+    const hasPending = documents.some(d =>
+      ['PENDING', 'PROCESSING', 'COMPLETED'].includes(d.status)
+    );
+    if (!hasPending || docsLoading) return;
+
+    const interval = setInterval(() => {
+      loadDocuments();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [documents, docsLoading]);
+
+  // WebSocket: real-time document status updates
+  useEffect(() => {
+    const socket = io('http://localhost:4000', {
+      transports: ['websocket', 'polling']
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      setWsConnected(true);
+      // Join the room for this expediente
+      socket.emit('join_expediente', expedienteId);
+    });
+
+    socket.on('disconnect', () => {
+      setWsConnected(false);
+    });
+
+    // Listen for document ready events
+    socket.on('document_ready', (payload: { documentId: string; status: string }) => {
+      setDocuments(prev => prev.map(doc =>
+        doc.id === payload.documentId ? { ...doc, status: 'READY' } : doc
+      ));
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `\u2705 Documento vectorizado e integrado a la IA. Ya puedes hacer preguntas sobre su contenido.`
+      }]);
+    });
+
+    // Listen for document error events
+    socket.on('document_error', (payload: { documentId: string; status: string; message?: string }) => {
+      setDocuments(prev => prev.map(doc =>
+        doc.id === payload.documentId ? { ...doc, status: 'ERROR' } : doc
+      ));
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `\u274c Error al procesar documento: ${payload.message || 'Error desconocido'}`
+      }]);
+    });
+
+    // Listen for AI auto-rename events
+    socket.on('document_renamed', (payload: { documentId: string; newName: string; status: string }) => {
+      setDocuments(prev => prev.map(doc =>
+        doc.id === payload.documentId ? { ...doc, fileName: payload.newName, status: payload.status } : doc
+      ));
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `\uD83C\uDFF7\uFE0F IA renombró el documento automáticamente: "${payload.newName}"`
+      }]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [expedienteId]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +149,50 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
       setUploading(false);
       // Limpiar el inpu para poder subir el mismo arhivo luego si falla
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDoc = async (docId: string, fileName: string) => {
+    if (!confirm(`¿Eliminar el documento "${fileName}"? Se borrarán sus vectores, texto extraído y el archivo de MinIO.`)) return;
+    try {
+      await api.delete(`/documents/${docId}`);
+      setDocuments(prev => prev.filter(d => d.id !== docId));
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `Documento "${fileName}" eliminado correctamente del sistema.`
+      }]);
+    } catch (error) {
+      console.error('Error eliminando documento', error);
+      alert('Error al eliminar el documento.');
+    }
+  };
+
+  const handleViewDoc = async (docId: string) => {
+    try {
+      const { data } = await api.get(`/documents/${docId}/url`);
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Error obteniendo URL', error);
+    }
+  };
+
+  const handleAiRename = async (docId: string) => {
+    setRenamingDocId(docId);
+    try {
+      const { data } = await api.post(`/documents/${docId}/ai-rename`);
+      setDocuments(prev => prev.map(d =>
+        d.id === docId ? { ...d, fileName: data.fileName } : d
+      ));
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `🏷️ IA renombró: "${data.previousName}" → "${data.fileName}"`
+      }]);
+    } catch (error: any) {
+      console.error('Error renombrando', error);
+      const msg = error?.response?.data?.message || 'Error al renombrar';
+      alert(msg);
+    } finally {
+      setRenamingDocId(null);
     }
   };
 
@@ -179,18 +296,48 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
                     </div>
                   </div>
 
-                  {/* Status Badge */}
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border ${doc.status === 'READY'
-                      ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                      : doc.status === 'ERROR'
-                        ? 'text-red-700 bg-red-50 border-red-200'
-                        : 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse'
-                    }`}>
-                    {doc.status === 'READY' && <CheckCircle2 className="w-4 h-4" />}
-                    {doc.status === 'PROCESSING' && <Clock className="w-4 h-4" />}
-                    {doc.status === 'UPLOADED' && <Clock className="w-4 h-4" />}
-                    {doc.status === 'ERROR' && <AlertCircle className="w-4 h-4" />}
-                    {doc.status === 'READY' ? 'Integrado a IA' : doc.status}
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {(doc.status === 'COMPLETED' || doc.status === 'READY') && (
+                      <button
+                        onClick={() => handleAiRename(doc.id)}
+                        disabled={renamingDocId === doc.id}
+                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 disabled:opacity-100"
+                        title="Renombrar con IA"
+                      >
+                        {renamingDocId === doc.id ? <Loader2 className="w-4 h-4 animate-spin text-amber-500" /> : <Sparkles className="w-4 h-4" />}
+                      </button>
+                    )}
+                    {(doc.status === 'COMPLETED' || doc.status === 'READY') && (
+                      <button
+                        onClick={() => handleViewDoc(doc.id)}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        title="Ver documento"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteDoc(doc.id, doc.fileName)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      title="Eliminar documento"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+
+                    {/* Status Badge */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border ${doc.status === 'READY'
+                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                        : doc.status === 'ERROR'
+                          ? 'text-red-700 bg-red-50 border-red-200'
+                          : 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse'
+                      }`}>
+                      {doc.status === 'READY' && <CheckCircle2 className="w-4 h-4" />}
+                      {doc.status === 'PROCESSING' && <Clock className="w-4 h-4" />}
+                      {doc.status === 'UPLOADED' && <Clock className="w-4 h-4" />}
+                      {doc.status === 'ERROR' && <AlertCircle className="w-4 h-4" />}
+                      {doc.status === 'READY' ? 'Integrado a IA' : doc.status}
+                    </div>
                   </div>
                 </div>
               ))
@@ -208,7 +355,18 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-900 leading-tight">Copiloto RAG</h3>
-            <p className="text-xs font-semibold text-blue-600 truncate max-w-[200px]">Auditor Semántico Inyectado</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-blue-600 truncate max-w-[160px]">Auditor Semántico Inyectado</p>
+              {wsConnected ? (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                  <Wifi className="w-3 h-3" /> Live
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
+                  <WifiOff className="w-3 h-3" /> Offline
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

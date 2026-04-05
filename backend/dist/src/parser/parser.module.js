@@ -13,6 +13,7 @@ const bullmq_1 = require("@nestjs/bullmq");
 const storage_module_1 = require("../storage/storage.module");
 const parser_processor_1 = require("./parser.processor");
 const ai_module_1 = require("../ai/ai.module");
+const events_module_1 = require("../events/events.module");
 let ParserModule = class ParserModule {
 };
 exports.ParserModule = ParserModule;
@@ -23,7 +24,8 @@ exports.ParserModule = ParserModule = __decorate([
             bullmq_1.BullModule.registerQueue({
                 name: 'document-parsing',
             }),
-            storage_module_1.StorageModule
+            storage_module_1.StorageModule,
+            events_module_1.EventsModule
         ],
         providers: [parser_service_1.ParserService, parser_processor_1.ParserProcessor],
         exports: [bullmq_1.BullModule]

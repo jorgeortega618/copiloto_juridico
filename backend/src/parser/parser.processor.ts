@@ -3,6 +3,7 @@ import { Queue, Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { EventsGateway } from '../events/events.gateway';
 const pdfParse = require('pdf-parse');
 
 @Processor('document-parsing')
@@ -13,6 +14,7 @@ export class ParserProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly eventsGateway: EventsGateway,
     @InjectQueue('ai-processing') private readonly aiQueue: Queue,
   ) {
     super();
@@ -40,13 +42,11 @@ export class ParserProcessor extends WorkerHost {
       const buffer = await this.storage.getFileBuffer(doc.minioKey);
 
       // 2. Extract Text via PDF-Parse (MVP)
-      // Note: for production, Tesseract or AWS Textract is recommended for image-pdfs
       let rawText = '';
       if (doc.minioKey.toLowerCase().endsWith('.pdf')) {
         const data = await pdfParse(buffer);
         rawText = data.text;
       } else {
-        // Fallback for simple txt or let user know
         rawText = buffer.toString('utf-8');
       }
 
@@ -66,7 +66,15 @@ export class ParserProcessor extends WorkerHost {
         data: { status: 'COMPLETED' }
       });
 
-      // 5. Trigger Ai Chunking Process
+      // 5. Notify frontend via WebSocket
+      if (doc.expedienteId) {
+        this.eventsGateway.server.to(doc.expedienteId).emit('document_parsed', {
+          documentId,
+          status: 'COMPLETED'
+        });
+      }
+
+      // 6. Trigger AI Chunking Process
       await this.aiQueue.add('generate-embeddings', { documentId });
 
       this.logger.log(`✅ Completed parsing for document ${documentId}`);

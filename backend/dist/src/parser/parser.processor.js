@@ -19,16 +19,19 @@ const bullmq_2 = require("bullmq");
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const storage_service_1 = require("../storage/storage.service");
+const events_gateway_1 = require("../events/events.gateway");
 const pdfParse = require('pdf-parse');
 let ParserProcessor = ParserProcessor_1 = class ParserProcessor extends bullmq_1.WorkerHost {
     prisma;
     storage;
+    eventsGateway;
     aiQueue;
     logger = new common_1.Logger(ParserProcessor_1.name);
-    constructor(prisma, storage, aiQueue) {
+    constructor(prisma, storage, eventsGateway, aiQueue) {
         super();
         this.prisma = prisma;
         this.storage = storage;
+        this.eventsGateway = eventsGateway;
         this.aiQueue = aiQueue;
     }
     async process(job) {
@@ -66,6 +69,12 @@ let ParserProcessor = ParserProcessor_1 = class ParserProcessor extends bullmq_1
                 where: { id: documentId },
                 data: { status: 'COMPLETED' }
             });
+            if (doc.expedienteId) {
+                this.eventsGateway.server.to(doc.expedienteId).emit('document_parsed', {
+                    documentId,
+                    status: 'COMPLETED'
+                });
+            }
             await this.aiQueue.add('generate-embeddings', { documentId });
             this.logger.log(`✅ Completed parsing for document ${documentId}`);
         }
@@ -83,9 +92,10 @@ exports.ParserProcessor = ParserProcessor;
 exports.ParserProcessor = ParserProcessor = ParserProcessor_1 = __decorate([
     (0, bullmq_1.Processor)('document-parsing'),
     (0, common_1.Injectable)(),
-    __param(2, (0, bullmq_1.InjectQueue)('ai-processing')),
+    __param(3, (0, bullmq_1.InjectQueue)('ai-processing')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         storage_service_1.StorageService,
+        events_gateway_1.EventsGateway,
         bullmq_2.Queue])
 ], ParserProcessor);
 //# sourceMappingURL=parser.processor.js.map

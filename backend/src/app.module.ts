@@ -13,6 +13,7 @@ import { ParserModule } from './parser/parser.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AiModule } from './ai/ai.module';
 import { EventsModule } from './events/events.module';
+import { CalendarModule } from './calendar/calendar.module';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { EventsModule } from './events/events.module';
     TasksModule, 
     StorageModule, 
     DocumentsModule, 
-    ParserModule, AiModule, EventsModule
+    ParserModule, AiModule, EventsModule, CalendarModule
   ],
   controllers: [AppController],
   providers: [AppService],

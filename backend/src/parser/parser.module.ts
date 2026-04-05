@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { StorageModule } from '../storage/storage.module';
 import { ParserProcessor } from './parser.processor';
 import { AiModule } from '../ai/ai.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -11,7 +12,8 @@ import { AiModule } from '../ai/ai.module';
     BullModule.registerQueue({
       name: 'document-parsing',
     }),
-    StorageModule
+    StorageModule,
+    EventsModule
   ],
   providers: [ParserService, ParserProcessor],
   exports: [BullModule] // export so documents module can use the queue

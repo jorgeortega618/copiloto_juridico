@@ -22,6 +22,7 @@ const parser_module_1 = require("./parser/parser.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const ai_module_1 = require("./ai/ai.module");
 const events_module_1 = require("./events/events.module");
+const calendar_module_1 = require("./calendar/calendar.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,7 +43,7 @@ exports.AppModule = AppModule = __decorate([
             tasks_module_1.TasksModule,
             storage_module_1.StorageModule,
             documents_module_1.DocumentsModule,
-            parser_module_1.ParserModule, ai_module_1.AiModule, events_module_1.EventsModule
+            parser_module_1.ParserModule, ai_module_1.AiModule, events_module_1.EventsModule, calendar_module_1.CalendarModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

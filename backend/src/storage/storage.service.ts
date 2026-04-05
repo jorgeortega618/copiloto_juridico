@@ -64,4 +64,8 @@ export class StorageService implements OnModuleInit {
       stream.on('error', reject);
     });
   }
+
+  async deleteFile(objectName: string) {
+    await this.minioClient.removeObject(this.bucketName, objectName);
+  }
 }
