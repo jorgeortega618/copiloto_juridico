@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import OpenAI from 'openai';
 import { v4 as uuidv4 } from 'uuid';
+import { EventsGateway } from '../events/events.gateway';
 
 @Processor('ai-processing')
 @Injectable()
@@ -12,7 +13,10 @@ export class AiProcessor extends WorkerHost {
   private readonly logger = new Logger(AiProcessor.name);
   private openai: OpenAI;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventsGateway: EventsGateway
+  ) {
     super();
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY || 'sk-fake-dev-key',
@@ -26,7 +30,8 @@ export class AiProcessor extends WorkerHost {
     try {
       // 1. Get Extracted Text
       const textRecord = await this.prisma.documentText.findUnique({
-        where: { documentId }
+        where: { documentId },
+        include: { document: true }
       });
 
       if (!textRecord || !textRecord.rawText) {
@@ -71,8 +76,25 @@ export class AiProcessor extends WorkerHost {
       }
 
       this.logger.log(`✅ Completed Vectorization for document ${documentId}`);
+      if (textRecord.document?.expedienteId) {
+        this.eventsGateway.server.to(textRecord.document.expedienteId).emit('document_ready', {
+          documentId,
+          status: 'READY'
+        });
+      }
     } catch (error: any) {
       this.logger.error(`❌ Failed AI Processing for document ${documentId}: ${error?.message || error}`);
+      
+      // Also notify failure
+      const failRecord = await this.prisma.document.findUnique({ where: { id: documentId } });
+      if (failRecord?.expedienteId) {
+        this.eventsGateway.server.to(failRecord.expedienteId).emit('document_error', {
+          documentId,
+          status: 'ERROR',
+          message: error?.message
+        });
+      }
+
       throw error;
     }
   }

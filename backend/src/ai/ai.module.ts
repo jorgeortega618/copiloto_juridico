@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AiProcessor } from './ai.processor';
 
 import { PrismaModule } from '../prisma/prisma.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     BullModule.registerQueue({
       name: 'ai-processing',
     }),
+    EventsModule
   ],
   providers: [AiService, AiProcessor],
   controllers: [AiController],

@@ -13,6 +13,7 @@ const ai_controller_1 = require("./ai.controller");
 const bullmq_1 = require("@nestjs/bullmq");
 const ai_processor_1 = require("./ai.processor");
 const prisma_module_1 = require("../prisma/prisma.module");
+const events_module_1 = require("../events/events.module");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
@@ -23,6 +24,7 @@ exports.AiModule = AiModule = __decorate([
             bullmq_1.BullModule.registerQueue({
                 name: 'ai-processing',
             }),
+            events_module_1.EventsModule
         ],
         providers: [ai_service_1.AiService, ai_processor_1.AiProcessor],
         controllers: [ai_controller_1.AiController],

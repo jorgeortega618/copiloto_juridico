@@ -20,13 +20,16 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const textsplitters_1 = require("@langchain/textsplitters");
 const openai_1 = __importDefault(require("openai"));
 const uuid_1 = require("uuid");
+const events_gateway_1 = require("../events/events.gateway");
 let AiProcessor = AiProcessor_1 = class AiProcessor extends bullmq_1.WorkerHost {
     prisma;
+    eventsGateway;
     logger = new common_1.Logger(AiProcessor_1.name);
     openai;
-    constructor(prisma) {
+    constructor(prisma, eventsGateway) {
         super();
         this.prisma = prisma;
+        this.eventsGateway = eventsGateway;
         this.openai = new openai_1.default({
             apiKey: process.env.OPENAI_API_KEY || 'sk-fake-dev-key',
         });
@@ -36,7 +39,8 @@ let AiProcessor = AiProcessor_1 = class AiProcessor extends bullmq_1.WorkerHost 
         this.logger.log(`🧠 Starting Chunking & Vectorization for document ${documentId}`);
         try {
             const textRecord = await this.prisma.documentText.findUnique({
-                where: { documentId }
+                where: { documentId },
+                include: { document: true }
             });
             if (!textRecord || !textRecord.rawText) {
                 throw new Error('No extracted text found for this document');
@@ -68,9 +72,23 @@ let AiProcessor = AiProcessor_1 = class AiProcessor extends bullmq_1.WorkerHost 
         `;
             }
             this.logger.log(`✅ Completed Vectorization for document ${documentId}`);
+            if (textRecord.document?.expedienteId) {
+                this.eventsGateway.server.to(textRecord.document.expedienteId).emit('document_ready', {
+                    documentId,
+                    status: 'READY'
+                });
+            }
         }
         catch (error) {
             this.logger.error(`❌ Failed AI Processing for document ${documentId}: ${error?.message || error}`);
+            const failRecord = await this.prisma.document.findUnique({ where: { id: documentId } });
+            if (failRecord?.expedienteId) {
+                this.eventsGateway.server.to(failRecord.expedienteId).emit('document_error', {
+                    documentId,
+                    status: 'ERROR',
+                    message: error?.message
+                });
+            }
             throw error;
         }
     }
@@ -79,6 +97,7 @@ exports.AiProcessor = AiProcessor;
 exports.AiProcessor = AiProcessor = AiProcessor_1 = __decorate([
     (0, bullmq_1.Processor)('ai-processing'),
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        events_gateway_1.EventsGateway])
 ], AiProcessor);
 //# sourceMappingURL=ai.processor.js.map

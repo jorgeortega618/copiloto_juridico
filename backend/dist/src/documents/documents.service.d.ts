@@ -8,33 +8,33 @@ export declare class DocumentsService {
     constructor(prisma: PrismaService, storageService: StorageService, parsingQueue: Queue);
     uploadDocument(orgId: string, expedienteId: string, userId: string, file: Express.Multer.File, title?: string): Promise<{
         id: string;
-        createdAt: Date;
         orgId: string;
         status: string;
-        expedienteId: string;
+        createdAt: Date;
         fileName: string;
         minioKey: string;
+        expedienteId: string;
         uploadedById: string;
     }>;
     getDocumentUrl(orgId: string, id: string): Promise<{
         url: string;
         id: string;
-        createdAt: Date;
         orgId: string;
         status: string;
-        expedienteId: string;
+        createdAt: Date;
         fileName: string;
         minioKey: string;
+        expedienteId: string;
         uploadedById: string;
     }>;
     findAllByExpediente(orgId: string, expedienteId: string): Promise<{
         id: string;
-        createdAt: Date;
         orgId: string;
         status: string;
-        expedienteId: string;
+        createdAt: Date;
         fileName: string;
         minioKey: string;
+        expedienteId: string;
         uploadedById: string;
     }[]>;
 }

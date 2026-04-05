@@ -54,7 +54,7 @@ let StorageService = class StorageService {
             port: 9000,
             useSSL: false,
             accessKey: process.env.MINIO_ROOT_USER || 'admin',
-            secretKey: process.env.MINIO_ROOT_PASSWORD || 'password123',
+            secretKey: process.env.MINIO_ROOT_PASSWORD || 'admin_secret_123',
         });
     }
     async onModuleInit() {
@@ -69,6 +69,15 @@ let StorageService = class StorageService {
         }
     }
     async uploadFile(orgId, expedienteId, file) {
+        try {
+            const exists = await this.minioClient.bucketExists(this.bucketName);
+            if (!exists) {
+                await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
+            }
+        }
+        catch (e) {
+            console.warn('Silent bucket check issue:', e);
+        }
         const objectName = `${orgId}/${expedienteId}/${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
         await this.minioClient.putObject(this.bucketName, objectName, file.buffer, file.size, { 'Content-Type': file.mimetype });
         return objectName;

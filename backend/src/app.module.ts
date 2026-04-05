@@ -12,6 +12,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { ParserModule } from './parser/parser.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AiModule } from './ai/ai.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -29,9 +30,11 @@ import { AiModule } from './ai/ai.module';
     TasksModule, 
     StorageModule, 
     DocumentsModule, 
-    ParserModule, AiModule
+    ParserModule, AiModule, EventsModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+
+// trigger
