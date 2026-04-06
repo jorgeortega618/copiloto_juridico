@@ -9,33 +9,33 @@ export declare class DocumentsService {
     constructor(prisma: PrismaService, storageService: StorageService, parsingQueue: Queue);
     uploadDocument(orgId: string, expedienteId: string, userId: string, file: Express.Multer.File, title?: string): Promise<{
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
     getDocumentUrl(orgId: string, id: string): Promise<{
         url: string;
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
     findAllByExpediente(orgId: string, expedienteId: string): Promise<{
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }[]>;
     remove(orgId: string, id: string): Promise<{
@@ -44,12 +44,12 @@ export declare class DocumentsService {
     aiRename(orgId: string, id: string): Promise<{
         previousName: string;
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
 }

@@ -4,33 +4,33 @@ export declare class DocumentsController {
     constructor(documentsService: DocumentsService);
     uploadDocument(orgId: string, user: any, expedienteId: string, file: Express.Multer.File, title?: string): Promise<{
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
     findAllByExpediente(orgId: string, expedienteId: string): Promise<{
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }[]>;
     getDocumentUrl(orgId: string, id: string): Promise<{
         url: string;
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
     remove(orgId: string, id: string): Promise<{
@@ -39,12 +39,12 @@ export declare class DocumentsController {
     aiRename(orgId: string, id: string): Promise<{
         previousName: string;
         id: string;
-        fileName: string;
-        minioKey: string;
-        status: string;
         createdAt: Date;
         orgId: string;
+        status: string;
         expedienteId: string;
+        fileName: string;
+        minioKey: string;
         uploadedById: string;
     }>;
 }

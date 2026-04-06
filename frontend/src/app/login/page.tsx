@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '../../lib/api';
-import { Lock, Mail, Gavel, ArrowRight } from 'lucide-react';
+import { Lock, Mail, Gavel, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function Login() {
   const router = useRouter();
@@ -18,17 +18,8 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { accessToken, user } = response.data;
-      
-      // Store JWT in localstorage for our api interceptor
-      localStorage.setItem('token', accessToken);
-      
-      // Store Organization ID dynamically (Multi-tenant requirement)
-      if (user.organizations && user.organizations.length > 0) {
-        localStorage.setItem('orgId', user.organizations[0].orgId);
-      }
-      
+      await api.post('/auth/login', { email, password });
+      // No token stored! The browser received HttpOnly cookies automatically.
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');
@@ -96,6 +87,12 @@ export default function Login() {
             {!loading && <ArrowRight className="w-5 h-5" />}
           </button>
         </form>
+
+        {/* Security badge */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl py-2.5 px-4">
+          <ShieldCheck className="w-4 h-4" />
+          Sesión protegida con HttpOnly Cookies — inmune a XSS
+        </div>
       </div>
     </div>
   );

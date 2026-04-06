@@ -1,8 +1,22 @@
+'use client';
+
 import Link from 'next/link';
-import { Home, Users, Calendar, Settings, Gavel, FileText, Bell, Search } from 'lucide-react';
-import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Home, Users, Calendar, Settings, Gavel, FileText, Bell, Search, LogOut, ShieldCheck } from 'lucide-react';
+import api from '../../lib/api';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Even if backend fails, redirect to login
+    }
+    router.push('/login');
+  };
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
       
@@ -40,6 +54,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Settings className="w-5 h-5" /> Opciones de Firma
           </button>
         </nav>
+
+        {/* Security Badge + Logout */}
+        <div className="px-4 pb-4 flex flex-col gap-2">
+          <div className="flex items-center gap-2 px-4 py-2 text-[10px] text-emerald-600 bg-emerald-50 rounded-lg border border-emerald-100">
+            <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Sesión protegida HttpOnly</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all border-l-4 border-transparent text-left text-sm"
+          >
+            <LogOut className="w-5 h-5" /> Cerrar Sesión
+          </button>
+        </div>
       </aside>
 
       {/* Main Content Area */}

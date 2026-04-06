@@ -11,9 +11,9 @@ exports.CurrentUser = (0, common_1.createParamDecorator)((data, ctx) => {
 });
 exports.CurrentOrg = (0, common_1.createParamDecorator)((data, ctx) => {
     const request = ctx.switchToHttp().getRequest();
-    const orgId = request.headers['x-organization-id'];
+    const orgId = request.cookies?.orgId || request.headers['x-organization-id'];
     if (!orgId) {
-        throw new common_1.UnauthorizedException('Header X-Organization-Id is missing or invalid');
+        throw new common_1.UnauthorizedException('Organization context is missing. Please log in again.');
     }
     return orgId;
 });

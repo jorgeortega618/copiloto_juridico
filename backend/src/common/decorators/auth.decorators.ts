@@ -13,12 +13,12 @@ export const CurrentUser = createParamDecorator(
 export const CurrentOrg = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const orgId = request.headers['x-organization-id'];
+
+    // Priority: Cookie (secure) → Header (backward compat for API clients)
+    const orgId = request.cookies?.orgId || request.headers['x-organization-id'];
     
-    // In a mature system, here we would also verify if request.user is allowed in orgId!
-    // For this MVP, we enforce it minimally or extract from header directly.
     if (!orgId) {
-      throw new UnauthorizedException('Header X-Organization-Id is missing or invalid');
+      throw new UnauthorizedException('Organization context is missing. Please log in again.');
     }
     
     return orgId;
