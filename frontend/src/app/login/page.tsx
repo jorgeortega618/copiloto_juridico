@@ -18,8 +18,9 @@ export default function Login() {
     setError('');
 
     try {
-      await api.post('/auth/login', { email, password });
-      // No token stored! The browser received HttpOnly cookies automatically.
+      const { data } = await api.post('/auth/login', { email, password });
+      // Guardamos el token en localStorage para evitar bloqueos de cookies de terceros
+      localStorage.setItem('accessToken', data.accessToken);
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');

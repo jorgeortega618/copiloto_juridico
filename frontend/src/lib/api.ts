@@ -2,7 +2,18 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api',
-  withCredentials: true,  // CRITICAL: sends HttpOnly cookies with every request
+  withCredentials: true,  // Mantiene compatibilidad con cookies
+});
+
+// Request Interceptor: Inyectar token de localStorage si existe
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
 // Response Interceptor: Handle 401 unauth → redirect to login
