@@ -27,7 +27,13 @@ export class DocumentsService {
     if (!exp) throw new NotFoundException('Expediente not found in this organization');
 
     // 2. Upload file to MinIO Object Storage
-    const minioKey = await this.storageService.uploadFile(orgId, expedienteId, file);
+    let minioKey: string;
+    try {
+      minioKey = await this.storageService.uploadFile(orgId, expedienteId, file);
+    } catch (e: any) {
+      console.error('MinIO Upload Error:', e);
+      throw new BadRequestException('Error al subir a MinIO: ' + (e?.message || 'Error desconocido'));
+    }
 
     // 3. Save Document references in SQL Node
     const doc = await this.prisma.document.create({
@@ -42,7 +48,17 @@ export class DocumentsService {
     });
 
     // 4. Dispatch Async Parsing Job to Redis/BullMQ
-    await this.parsingQueue.add('extract-text', { documentId: doc.id });
+    try {
+      await this.parsingQueue.add('extract-text', { documentId: doc.id });
+    } catch (e: any) {
+      console.error('Redis/BullMQ Queue Error:', e);
+      // We don't fail the upload if queuing fails, we just log it and maybe update status
+      await this.prisma.document.update({
+        where: { id: doc.id },
+        data: { status: 'ERROR' } // Indicate it failed to process
+      });
+      throw new BadRequestException('El archivo se subió pero falló la cola de procesamiento (Redis): ' + (e?.message || 'Error desconocido'));
+    }
 
     return doc;
   }

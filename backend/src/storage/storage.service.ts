@@ -7,10 +7,16 @@ export class StorageService implements OnModuleInit {
   private bucketName = process.env.MINIO_DEFAULT_BUCKET || 'copiloto-documents';
 
   constructor() {
+    let endPoint = process.env.MINIO_ENDPOINT || '127.0.0.1';
+    endPoint = endPoint.replace(/^https?:\/\//, ''); // Strip protocol if pasted by mistake
+    
+    // If user pasted a public Railway URL, it needs SSL and port 443
+    const isPublic = endPoint.includes('up.railway.app');
+    
     this.minioClient = new Minio.Client({
-      endPoint: process.env.MINIO_ENDPOINT || '127.0.0.1',
-      port: parseInt(process.env.MINIO_PORT || '9000', 10),
-      useSSL: process.env.MINIO_USE_SSL === 'true',
+      endPoint: endPoint,
+      port: isPublic ? 443 : parseInt(process.env.MINIO_PORT || '9000', 10),
+      useSSL: isPublic ? true : (process.env.MINIO_USE_SSL === 'true'),
       accessKey: process.env.MINIO_ROOT_USER || 'admin',
       secretKey: process.env.MINIO_ROOT_PASSWORD || 'admin_secret_123',
     });
