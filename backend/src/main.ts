@@ -17,12 +17,8 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Permitir peticiones sin origen (ej. curl) o de cualquier localhost o del frontend configurado
-      if (!origin || origin.startsWith('http://localhost') || origin === process.env.FRONTEND_URL) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+      // Para el MVP, permitimos CUALQUIER origen (incluyendo todos los dominios de Vercel y localhost)
+      callback(null, true);
     },
     credentials: true,
   });
