@@ -35,28 +35,35 @@ export class AiService {
     // 2. Similarity Search en pgvector (Top 5 chunks)
     // Buscamos sobre documentos de esta organización (y opcionalmente este expediente)
     let relevantChunks: any[];
-    if (expedienteId) {
-      // Filtrar por expedienteId específico
-      relevantChunks = await this.prisma.$queryRaw`
-        SELECT c.id, c.content, c.chunk_index, d.file_name,
-               1 - (c.embedding <=> ${vectorString}::vector) as similarity
-        FROM document_chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE d.org_id = ${orgId} AND d.expediente_id = ${expedienteId}
-        ORDER BY c.embedding <=> ${vectorString}::vector
-        LIMIT 5;
-      `;
-    } else {
-      // Búsqueda global en toda la organización
-      relevantChunks = await this.prisma.$queryRaw`
-        SELECT c.id, c.content, c.chunk_index, d.file_name,
-               1 - (c.embedding <=> ${vectorString}::vector) as similarity
-        FROM document_chunks c
-        JOIN documents d ON c.document_id = d.id
-        WHERE d.org_id = ${orgId}
-        ORDER BY c.embedding <=> ${vectorString}::vector
-        LIMIT 5;
-      `;
+    try {
+      if (expedienteId) {
+        // Filtrar por expedienteId específico
+        relevantChunks = await this.prisma.$queryRaw`
+          SELECT c.id, c.content, c.chunk_index, d.file_name,
+                 1 - (c.embedding <=> ${vectorString}::vector) as similarity
+          FROM document_chunks c
+          JOIN documents d ON c.document_id = d.id
+          WHERE d.org_id = ${orgId} AND d.expediente_id = ${expedienteId}
+          ORDER BY c.embedding <=> ${vectorString}::vector
+          LIMIT 5;
+        `;
+      } else {
+        // Búsqueda global en toda la organización
+        relevantChunks = await this.prisma.$queryRaw`
+          SELECT c.id, c.content, c.chunk_index, d.file_name,
+                 1 - (c.embedding <=> ${vectorString}::vector) as similarity
+          FROM document_chunks c
+          JOIN documents d ON c.document_id = d.id
+          WHERE d.org_id = ${orgId}
+          ORDER BY c.embedding <=> ${vectorString}::vector
+          LIMIT 5;
+        `;
+      }
+    } catch (dbError: any) {
+      this.logger.error('Error in pgvector query:', dbError);
+      throw new BadRequestException(
+        'Error interno en la base de datos vectorial: ' + (dbError?.message || 'Revisa que la extensión pgvector esté activada y las migraciones aplicadas.')
+      );
     }
 
     if (!relevantChunks || relevantChunks.length === 0) {
