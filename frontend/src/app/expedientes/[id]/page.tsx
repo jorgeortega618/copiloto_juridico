@@ -165,7 +165,8 @@ export default function ExpedienteDetail({ params }: { params: Promise<{ id: str
   };
 
   const setupWebSocket = () => {
-    const socket = io('http://localhost:4000', { transports: ['websocket', 'polling'] });
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
+    const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
     socketRef.current = socket;
 
     socket.on('connect', () => {

@@ -15,9 +15,15 @@ async function bootstrap() {
   // Cookie parser middleware — reads cookies from every request
   app.use(cookieParser());
 
-  // CORS — allow credentials (cookies) from the frontend origin
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Permitir peticiones sin origen (ej. curl) o de cualquier localhost o del frontend configurado
+      if (!origin || origin.startsWith('http://localhost') || origin === process.env.FRONTEND_URL) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 
