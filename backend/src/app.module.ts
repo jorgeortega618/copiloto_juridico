@@ -19,9 +19,9 @@ import { CalendarModule } from './calendar/calendar.module';
   imports: [
     BullModule.forRoot({
       connection: {
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD,
+        host: process.env.REDISHOST || process.env.REDIS_HOST || '127.0.0.1',
+        port: parseInt(process.env.REDISPORT || process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDISPASSWORD || process.env.REDIS_PASSWORD,
       },
     }),
     PrismaModule, 
