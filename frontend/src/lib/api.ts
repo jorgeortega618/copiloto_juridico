@@ -5,10 +5,26 @@ const api = axios.create({
   withCredentials: true,  // Mantiene compatibilidad con cookies
 });
 
-// Request Interceptor: Inyectar token de localStorage si existe
-api.interceptors.request.use((config) => {
+// Request Interceptor: Auto-login para el MVP
+api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('accessToken');
+    let token = localStorage.getItem('accessToken');
+    
+    // Si no hay token y no es la ruta de login, autologin silencioso
+    if (!token && !config.url?.includes('/auth/login')) {
+      try {
+        const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+        const { data } = await axios.post(`${baseURL}/auth/login`, {
+          email: 'demo@abogados.com',
+          password: '123456'
+        });
+        token = data.accessToken;
+        localStorage.setItem('accessToken', token);
+      } catch (err) {
+        console.error('Auto-login failed', err);
+      }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -16,15 +32,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: Handle 401 unauth → redirect to login
+// Response Interceptor: Remove 401 redirect to avoid loops
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-    }
     return Promise.reject(error);
   }
 );
