@@ -24,8 +24,14 @@ export class ExpedientesService {
       where: { id, orgId },
       include: {
         client: true,
-        tasks: true,
+        tasks: {
+          include: { assignee: true }
+        },
         documents: true,
+        events: true,
+        users: {
+          include: { user: true }
+        }
       }
     });
     if (!exp) throw new NotFoundException('Expediente not found');

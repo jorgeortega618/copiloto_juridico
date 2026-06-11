@@ -20,6 +20,10 @@ export class CreateTaskDto {
   @IsDateString()
   @IsOptional()
   dueDate?: string;
+
+  @IsString()
+  @IsOptional()
+  assigneeId?: string;
 }
 
 export class UpdateTaskDto {
