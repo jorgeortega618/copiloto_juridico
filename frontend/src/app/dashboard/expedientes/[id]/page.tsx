@@ -66,7 +66,8 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
 
   // WebSocket: real-time document status updates
   useEffect(() => {
-    const socket = io('http://localhost:4000', {
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000';
+    const socket = io(socketUrl, {
       transports: ['websocket', 'polling']
     });
     socketRef.current = socket;
