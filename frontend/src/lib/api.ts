@@ -19,8 +19,12 @@ api.interceptors.request.use(async (config) => {
           password: '123456'
         });
         token = data.accessToken;
+        const orgId = data.orgId;
         if (token) {
           localStorage.setItem('accessToken', token);
+        }
+        if (orgId) {
+          localStorage.setItem('orgId', orgId);
         }
       } catch (err) {
         console.error('Auto-login failed', err);
@@ -29,6 +33,11 @@ api.interceptors.request.use(async (config) => {
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    const orgId = localStorage.getItem('orgId');
+    if (orgId) {
+      config.headers.set('X-Organization-Id', orgId);
     }
   }
   return config;

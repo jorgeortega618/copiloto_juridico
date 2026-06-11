@@ -44,8 +44,8 @@ export class AuthController {
       res.cookie('orgId', result.user.organizations[0].orgId, COOKIE_OPTIONS);
     }
 
-    // Retornamos también el token por si el navegador bloquea cookies de terceros
-    return { user: result.user, accessToken: result.accessToken };
+    const orgId = result.user.organizations?.[0]?.orgId;
+    return { user: result.user, accessToken: result.accessToken, orgId };
   }
 
   @Post('logout')
