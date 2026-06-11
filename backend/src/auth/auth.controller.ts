@@ -4,9 +4,9 @@ import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 
 const COOKIE_OPTIONS = {
-  httpOnly: true,       // JavaScript CANNOT read this cookie → XSS immune
-  secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
-  sameSite: 'lax' as const,   // CSRF protection
+  httpOnly: true,
+  secure: true, // Requerido para SameSite=none en HTTPS
+  sameSite: 'none' as const, // Permite cookies cross-domain (Vercel -> Railway)
   path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
