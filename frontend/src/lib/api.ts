@@ -9,9 +9,10 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   if (typeof window !== 'undefined') {
     let token = localStorage.getItem('accessToken');
+    let orgId = localStorage.getItem('orgId');
     
-    // Si no hay token y no es la ruta de login, autologin silencioso
-    if (!token && !config.url?.includes('/auth/login')) {
+    // Si no hay token o no hay orgId, autologin silencioso
+    if ((!token || !orgId) && !config.url?.includes('/auth/login')) {
       try {
         const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
         const { data } = await axios.post(`${baseURL}/auth/login`, {
@@ -19,7 +20,7 @@ api.interceptors.request.use(async (config) => {
           password: '123456'
         });
         token = data.accessToken;
-        const orgId = data.orgId;
+        orgId = data.orgId;
         if (token) {
           localStorage.setItem('accessToken', token);
         }
@@ -35,7 +36,6 @@ api.interceptors.request.use(async (config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    const orgId = localStorage.getItem('orgId');
     if (orgId) {
       config.headers.set('X-Organization-Id', orgId);
     }
