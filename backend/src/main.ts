@@ -16,7 +16,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Permitir peticiones sin origen (ej. curl) o de cualquier localhost o del frontend configurado
       if (!origin || origin.startsWith('http://localhost') || origin === process.env.FRONTEND_URL) {
         callback(null, true);
