@@ -19,7 +19,9 @@ api.interceptors.request.use(async (config) => {
           password: '123456'
         });
         token = data.accessToken;
-        localStorage.setItem('accessToken', token);
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        }
       } catch (err) {
         console.error('Auto-login failed', err);
       }
