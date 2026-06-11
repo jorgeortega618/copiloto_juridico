@@ -88,11 +88,7 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Security badge */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl py-2.5 px-4">
-          <ShieldCheck className="w-4 h-4" />
-          Sesión protegida con HttpOnly Cookies — inmune a XSS
-        </div>
+
       </div>
     </div>
   );
