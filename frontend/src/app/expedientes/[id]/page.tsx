@@ -242,8 +242,10 @@ export default function ExpedienteDetail({ params }: { params: Promise<{ id: str
     try {
       const response = await api.post('/ai/chat', { query: userMessage, expedienteId });
       setMessages(prev => [...prev, { role: 'system', content: response.data.answer }]);
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'system', content: "Ocurrió un error al contactar al motor de IA." }]);
+    } catch (error: any) {
+      console.error('Error en el chat', error);
+      const errorMsg = error.response?.data?.message || "Ocurrió un error al contactar al motor de IA.";
+      setMessages(prev => [...prev, { role: 'system', content: `Error: ${errorMsg}` }]);
     } finally {
       setIsTyping(false);
     }

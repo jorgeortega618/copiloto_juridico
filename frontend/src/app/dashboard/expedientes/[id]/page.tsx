@@ -216,11 +216,12 @@ export default function ExpedienteDetails({ params }: { params: Promise<{ id: st
         role: 'system',
         content: response.data.answer
       }]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error al consultar la IA:", err);
+      const errorMsg = err.response?.data?.message || "Ocurrió un error al contactar al motor RAG de IA.";
       setMessages(prev => [...prev, {
         role: 'system',
-        content: "Ocurrió un error al contactar al motor RAG de IA."
+        content: `Error: ${errorMsg}`
       }]);
     } finally {
       setIsTyping(false);

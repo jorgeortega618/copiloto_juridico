@@ -17,12 +17,20 @@ export class AiService {
     if (!query) throw new BadRequestException('Query cannot be empty');
 
     // 1. Embeber la pregunta del usuario
-    const queryEmbeddingResponse = await this.openai.embeddings.create({
-      model: 'text-embedding-ada-002',
-      input: query,
-    });
-    const queryVector = queryEmbeddingResponse.data[0].embedding;
-    const vectorString = `[${queryVector.join(',')}]`;
+    let vectorString: string;
+    try {
+      const queryEmbeddingResponse = await this.openai.embeddings.create({
+        model: 'text-embedding-ada-002',
+        input: query,
+      });
+      const queryVector = queryEmbeddingResponse.data[0].embedding;
+      vectorString = `[${queryVector.join(',')}]`;
+    } catch (e: any) {
+      this.logger.error('Error contacting OpenAI for embeddings:', e);
+      throw new BadRequestException(
+        'Error de autenticación con OpenAI. Verifica que la variable OPENAI_API_KEY esté configurada correctamente en Railway.'
+      );
+    }
 
     // 2. Similarity Search en pgvector (Top 5 chunks)
     // Buscamos sobre documentos de esta organización (y opcionalmente este expediente)
@@ -66,32 +74,39 @@ export class AiService {
       Si la información no está en el contexto, indica claramente que "No hay suficiente información en el expediente cargado para responder a tu consulta", no inventes datos. Si te preguntan algo fuera del contexto jurídico del documento, ignóralo cordialmente.
     `;
 
-    const chatResponse = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.2, // Baja creatividad, máxima certeza
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `CONTEXTO DOCUMENTAL:\n${contextText}\n\nPREGUNTA DEL ABOGADO: ${query}` }
-      ],
-    });
+    try {
+      const chatResponse = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        temperature: 0.2, // Baja creatividad, máxima certeza
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `CONTEXTO DOCUMENTAL:\n${contextText}\n\nPREGUNTA DEL ABOGADO: ${query}` }
+        ],
+      });
 
-    const answer = chatResponse.choices[0].message.content;
+      const answer = chatResponse.choices[0].message.content;
 
-    // 4. Guardar histórico de la consulta para auditoría y facturación si corresponde
-    await this.prisma.aiQuery.create({
-      data: {
-        orgId,
-        expedienteId,
-        userId,
-        queryText: query,
-        responseText: answer || 'Respuesta vacía generada',
-        sources: relevantChunks.map(c => ({ id: c.id, fileName: c.file_name, similarity: c.similarity }))
-      }
-    });
+      // 4. Guardar histórico de la consulta para auditoría y facturación si corresponde
+      await this.prisma.aiQuery.create({
+        data: {
+          orgId,
+          expedienteId,
+          userId,
+          queryText: query,
+          responseText: answer || 'Respuesta vacía generada',
+          sources: relevantChunks.map(c => ({ id: c.id, fileName: c.file_name, similarity: c.similarity }))
+        }
+      });
 
-    return { 
-      answer, 
-      sources: relevantChunks.map(c => ({ fileName: c.file_name, snippet: c.content.substring(0, 50) + '...', similarity: c.similarity }))
-    };
+      return { 
+        answer, 
+        sources: relevantChunks.map(c => ({ fileName: c.file_name, snippet: c.content.substring(0, 50) + '...', similarity: c.similarity }))
+      };
+    } catch (e: any) {
+      this.logger.error('Error contacting OpenAI for chat:', e);
+      throw new BadRequestException(
+        'Error generando la respuesta con OpenAI. Verifica tu API KEY o el saldo de tu cuenta.'
+      );
+    }
   }
 }
